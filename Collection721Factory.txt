@@ -1,0 +1,40 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+import "./Collection721Impl.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
+
+contract Collection721Factory {
+
+    address public implementation;
+    mapping(address => address[]) public allClones;
+    event NewClone(int8 indexed _id, address indexed _owner);
+
+    constructor(address _implementation){
+        implementation = _implementation;
+    }
+
+    function _clone(
+        string memory _name,
+        string memory _symbol,
+        uint _maxSupply,
+        uint _maxPerMint,
+        uint _reserveQty,
+        uint _maxPerAddress,
+        uint _royPercentage,
+        address payable _royaltyAddress,
+        address owner,
+        bool _revealed
+        ) external {
+
+        address identicalChild = Clones.clone(implementation);
+        allClones[msg.sender].push(identicalChild);
+        Collection721Impl(identicalChild).initialize(_name, _symbol, _maxSupply, 
+            _maxPerMint, _reserveQty, _revealed, _maxPerAddress, _royPercentage, _royaltyAddress, owner);
+        emit NewClone(1, identicalChild);
+    }
+    
+    function returnClones(address _owner) external view returns (address[] memory){
+        return allClones[_owner];
+    }
+}
